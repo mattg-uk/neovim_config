@@ -5,6 +5,9 @@ end
 
 local actions = require "telescope.actions"
 
+require('telescope').load_extension('fzf')
+require('telescope').load_extension('media_files')
+
 telescope.setup {
   defaults = {
 
@@ -28,7 +31,7 @@ telescope.setup {
         ["<CR>"] = actions.select_default,
         ["<C-x>"] = actions.select_horizontal,
         ["<C-v>"] = actions.select_vertical,
-        ["<C-t>"] = actions.select_tab,
+        --        ["<C-t>"] = actions.select_tab,
 
         ["<C-u>"] = actions.preview_scrolling_up,
         ["<C-d>"] = actions.preview_scrolling_down,
@@ -41,7 +44,7 @@ telescope.setup {
         ["<C-q>"] = actions.send_to_qflist + actions.open_qflist,
         ["<M-q>"] = actions.send_selected_to_qflist + actions.open_qflist,
         ["<C-l>"] = actions.complete_tag,
-        ["<C-_>"] = actions.which_key, -- keys from pressing <C-/>
+        ["<C-_>"] = actions.which_key,         -- keys from pressing <C-/>
       },
 
       n = {
@@ -49,7 +52,7 @@ telescope.setup {
         ["<CR>"] = actions.select_default,
         ["<C-x>"] = actions.select_horizontal,
         ["<C-v>"] = actions.select_vertical,
-        ["<C-t>"] = actions.select_tab,
+        --        ["<C-t>"] = actions.select_tab,
 
         ["<Tab>"] = actions.toggle_selection + actions.move_selection_worse,
         ["<S-Tab>"] = actions.toggle_selection + actions.move_selection_better,
@@ -87,6 +90,18 @@ telescope.setup {
     -- builtin picker
   },
   extensions = {
+    media_files = {
+      -- filetypes whitelist
+      -- defaults to {"png", "jpg", "mp4", "webm", "pdf"}
+      filetypes = { "png", "webp", "jpg", "jpeg" },
+      find_cmd = "rg"       -- find command (defaults to `fd`)
+    },
+    fzf = {
+      fuzzy = true,
+      override_generic_sorter = true,
+      override_file_sorter = true,
+      case_mode = "smart_case",
+    },
     -- Your extension configuration goes here:
     -- extension_name = {
     --   extension_config_key = value,
