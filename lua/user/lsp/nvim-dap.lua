@@ -18,11 +18,17 @@ dap.defaults.fallback.focus_terminal = true
 -- This is also used for the setup of nvim-dap-python, which uses debugpy
 local pythonvenv = os.getenv('HOME') .. '/.virtualenvs/debugpy/bin/python'
 
+-- Get the AD7 debug adapter directly from Mason
+local cpptools = os.getenv('HOME') .. '/.local/share/nvim/mason/packages/cpptools/extension/debugAdapters/bin/OpenDebugAD7'
+
+-- Likewise, codelldb will come from Mason
+local codelldb = os.getenv('HOME') .. '/.local/share/nvim/mason/packages/codelldb/codelldb'
+
 -- nvim-dap: debug adapters to launch / connect to debuggee
 dap.adapters.cppdbg = {
     id = 'cppdbg',
     type = 'executable',
-    command = '/home/matt/.config/nvim/extensions/cpptools-1.12.4/debugAdapters/bin/OpenDebugAD7'
+    command = cpptools
 }
 
 dap.adapters.python = {
@@ -32,59 +38,69 @@ dap.adapters.python = {
     args = { '-m', 'debugpy.adapter' }
 }
 
-dap.adapters.lldb = {
-    type = 'executable',
-    command = '/usr/bin/lldb-vscode-16',
-    name = "lldb"
+dap.adapters.codelldb = {
+    type = "server",
+    port = "${port}",
+    executable = {
+        command = codelldb,
+        args = { "--port", "${port}" },
+    },
 }
+
+local function getpath()
+    return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
+end
 
 -- configurations for the debug adapters
 dap.configurations.cpp = {
     {
-        name = "Launch file (GDB)",
-        type = "cppdbg",
+        name = "Launch file (LLDB)",
+        type = "codelldb",
         request = "launch",
-        program = function()
-            return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
-        end,
+        program = getpath,
         cwd = '${workspaceFolder}',
         stopAtEntry = true,
     },
     {
-        name = 'Attach with gdb :1234',
+        name = "Launch file (cpptools)",
+        type = "cppdbg",
+        request = "launch",
+        program = getpath,
+        cwd = '${workspaceFolder}',
+        stopAtEntry = true,
+    },
+    -- cpptools makes more sense for gdb than codelldb 
+    {
+        name = 'Attach to gdb :1234',
         type = 'cppdbg',
         request = 'launch',
         MIMode = 'gdb',
         miDebuggerServerAddress = 'localhost:1234',
         miDebuggerPath = '/usr/bin/gdb',
         cwd = '${workspaceFolder}',
-        program = function()
-            return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
-        end,
+        program = getpath,
     },
+    -- for embedded targets, cpptools works best
     {
-        name = 'Attach with avr-gdb :4242',
+        name = 'Attach to avr-gdb :4242',
         type = 'cppdbg',
         request = 'launch',
         MIMode = 'gdb',
         miDebuggerServerAddress = 'localhost:4242',
         miDebuggerPath = '/usr/bin/avr-gdb',
         cwd = '${workspaceFolder}',
-        program = function()
-            return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
-        end,
+        program = getpath,
     },
+    -- Assumes a user configured symlink to the gcc-arm-none-eabi-xxx toolchain
     {
-        name = 'Attach with arm-none-eabi-gdb :2331',
+        name = 'Attach to arm-none-eabi-gdb :2331',
         type = 'cppdbg',
         request = 'launch',
         MIMode = 'gdb',
         miDebuggerServerAddress = 'localhost:2331',
-        miDebuggerPath = '/opt/gcc-arm-none-eabi-14.2/bin/arm-none-eabi-gdb',
+        miDebuggerPath = 'arm-none-eabi-gdb',
         cwd = '${workspaceFolder}',
-        program = function()
-            return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
-        end,
+        program = getpath,
     },
 }
 
@@ -95,9 +111,7 @@ dap.configurations.python = {
         name = "Specify launch file",
         type = "python",
         request = 'launch',
-        program = function()
-            return vim.fn.input({ prompt = 'Path to executable: ', default = vim.fn.getcwd() .. '/', completion = 'file' })
-        end,
+        program = getpath,
         pythonPath = '/usr/bin/python3',
         cwd = '${workspaceFolder}',
         console = "integratedTerminal",
